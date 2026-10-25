@@ -1904,6 +1904,14 @@ impl WebDevice {
         &self,
         source: &ExternalTextureSource,
     ) -> dispatch::DispatchExternalTexture {
+        self.try_import_external_texture(source)
+            .expect("importExternalTexture failed")
+    }
+
+    pub(crate) fn try_import_external_texture(
+        &self,
+        source: &ExternalTextureSource,
+    ) -> Result<dispatch::DispatchExternalTexture, JsValue> {
         let descriptor = match source {
             ExternalTextureSource::HtmlVideoElement(v) => {
                 webgpu_sys::GpuExternalTextureDescriptor::new(v)
@@ -1912,15 +1920,12 @@ impl WebDevice {
                 webgpu_sys::GpuExternalTextureDescriptor::new_with_video_frame(f)
             }
         };
-        let inner = self
-            .inner
-            .import_external_texture(&descriptor)
-            .expect("importExternalTexture failed");
-        WebExternalTexture {
+        let inner = self.inner.import_external_texture(&descriptor)?;
+        Ok(WebExternalTexture {
             inner,
             ident: crate::cmp::Identifier::create(),
         }
-        .into()
+        .into())
     }
 }
 

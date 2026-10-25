@@ -433,7 +433,7 @@ impl Device {
     /// The planes and the [`ExternalTextureDescriptor`]'s conversion
     /// parameters (YCbCr matrix, gamut and transfer functions) are supplied by
     /// the caller, and wgpu performs the conversion when the texture is
-    /// sampled. Works on every backend.
+    /// sampled. Plane-based creation is not supported on the browser WebGPU backend.
     ///
     /// Use this when the video data already lives in wgpu textures, e.g.
     /// frames you decoded yourself. To bind a web media source directly on the
@@ -476,6 +476,24 @@ impl Device {
             .ok_or(NotWebGpuBackendError)?
             .import_external_texture(source);
         Ok(ExternalTexture { inner })
+    }
+
+    /// Fallible browser import, including DOM source errors such as unavailable
+    /// frame data and cross-origin restrictions. Non-WebGPU devices return an
+    /// error. HTML video imports must be bound and submitted in this same
+    /// JavaScript task, including when paused; Rust ownership does not extend
+    /// their browser-managed lifetime.
+    #[cfg(webgpu)]
+    pub fn try_import_external_texture(
+        &self,
+        source: &webgpu::ExternalTextureSource,
+    ) -> Result<ExternalTexture, wasm_bindgen::JsValue> {
+        let device = self.inner.as_webgpu_opt().ok_or_else(|| {
+            wasm_bindgen::JsValue::from_str("External video import requires the WebGPU backend")
+        })?;
+        device
+            .try_import_external_texture(source)
+            .map(|inner| ExternalTexture { inner })
     }
 
     /// Creates a [`Buffer`] from a wgpu-hal Buffer.

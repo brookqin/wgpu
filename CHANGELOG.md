@@ -1,5 +1,9 @@
 # Change Log
 
+## Local additions
+
+- Add `Device::try_import_external_texture` to return browser source errors to callers without panicking.
+
 ## Local backports
 
 - Add `Device::import_external_texture` to bind a `GPUExternalTexture` sampled from an `HTMLVideoElement` or WebCodecs `VideoFrame`, without a copy. By @AdrianEddy in [#9936](https://github.com/gfx-rs/wgpu/pull/9936).
